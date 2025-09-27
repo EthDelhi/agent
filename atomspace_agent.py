@@ -40,7 +40,6 @@ def _clone_repo_to_memory(repo_url: str) -> dict:
         git.Repo.clone_from(repo_url, temp_dir)
         print("Cloning complete. Reading files into memory...")
 
-        # Walk through the temporary directory and load file contents into the dictionary.
         for root, dirs, files in os.walk(temp_dir):
             dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['__pycache__', 'node_modules']]
             
@@ -71,56 +70,51 @@ def identify_sponsor_apis_from_requirements(requirements: str) -> list:
     Simulates AI extraction of required modules/APIs from sponsor's natural language requirements.
     In a real system, ASI:One would perform this JSON extraction.
     """
-    common_apis = ['asi:one', 'metta', 'uagents', 'fetch', 'stripe', 'twilio', 'aws', 'gcp', 'azure']
-    found_apis = [api for api in common_apis if api.lower() in requirements.lower()]
+    common_apis = ['asi:one', 'metta', 'uagents', 'fetch', 'stripe', 'twilio', 'aws', 'gcp', 'azure', 'Topsis','PDP']
+    found_apis = [api for api in common_apis if api in requirements]
     return list(set(found_apis))
 
-def initialize_codebase_knowledge_graph(metta: MeTTa, codebase_url: str, required_apis: list) -> tuple:
+def generate_codebase_kg(metta: MeTTa, codebase_url: str, required_apis: list) -> tuple:
     """
-    Clears the space, builds the KG, and identifies usage of required APIs.
+    Clones a repo, builds the KG from its Python files in memory,
+    and identifies usage of required APIs.
     """
-    if hasattr(project_space, 'clear'):
-        project_space.clear()
-        
     files_processed = 0
     atoms_added = 0
     verified_apis = set()
     codebase_files = _clone_repo_to_memory(codebase_url)
-    print(len(codebase_files))
+    target_space = metta.space()
+
+    def add_atom_safe(atom):
+        nonlocal atoms_added
+        target_space.add_atom(atom)
+        atoms_added += 1
 
     for relative_path, content in codebase_files.items():
-            if relative_path.endswith('.py'):       
-                try:    
-                    tree = ast.parse(content)
-                    files_processed += 1
-                    
-                    for node in ast.walk(tree):
-                        def add_atom_safe(atom):
-                            nonlocal atoms_added
-                            target_space = metta.space() if hasattr(metta, 'space') else project_space
-                            target_space.add_atom(atom)
-                            atoms_added += 1
+        if relative_path.endswith('.py'):
+            try:
+                tree = ast.parse(content)
+                files_processed += 1
 
-                        if isinstance(node, (ast.Import, ast.ImportFrom)):
-                            module_name = getattr(node, 'module', None)
-                            
-                            for alias in node.names:
-                                imported_module = alias.name.lower()
-                                
-                                for req in required_apis:
-                                    if req in imported_module:
-                                        add_atom_safe(E(S("imports_required_api"), S(relative_path), S(imported_module)))
-                                        verified_apis.add(req)
-                                        if content.count(f"{req}.") > 0: 
-                                            add_atom_safe(E(S("calls_api_function"), S(relative_path), S(f"{req}_call")))
-                                            
-                        if isinstance(node, ast.FunctionDef):
-                            add_atom_safe(E(S("defines_function"), S(relative_path), S(node.name)))
-                        elif isinstance(node, ast.ClassDef):
-                            add_atom_safe(E(S("defines_class"), S(relative_path), S(node.name)))
-                        
-                except Exception as e:
-                    print(f"Error parsing {relative_path}: {e}")
+                for node in ast.walk(tree):
+                    if isinstance(node, (ast.Import, ast.ImportFrom)):
+                        base_module = getattr(node, 'module', None)
+                        for alias in node.names:
+                            full_import_name = f"{base_module}.{alias.name}" if base_module else alias.name
+                            for req_api in required_apis:
+                                if req_api in full_import_name.split('.'):
+                                    add_atom_safe(E(S("imports_required_api"), S(relative_path), S(req_api)))
+                                    verified_apis.add(req_api)
+                                    if content.count(f"{req_api}.") > 0 or content.count(f"{alias.asname or alias.name}.") > 0:
+                                        add_atom_safe(E(S("uses_api_function"), S(relative_path), S(req_api)))
+
+                    elif isinstance(node, ast.FunctionDef):
+                        add_atom_safe(E(S("defines_function"), S(relative_path), S(node.name)))
+                    elif isinstance(node, ast.ClassDef):
+                        add_atom_safe(E(S("defines_class"), S(relative_path), S(node.name)))
+
+            except Exception as e:
+                print(f"Error parsing {relative_path}: {e}")
     
     metta_runner.run('!(add-atom &self (query_pattern find_verified_imports \"(match &self (imports_required_api $file $module) (pair $file $module))"))')
     
@@ -233,7 +227,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             # )
             # ctx.logger.info(f"Code Reuse Analysis: {reuse_log}")
             
-            files_processed, atoms_added, verified_apis = initialize_codebase_knowledge_graph(
+            files_processed, atoms_added, verified_apis = generate_codebase_kg(
                 metta_runner, repo_url, required_apis
             )
             ctx.logger.info(f"KG Built: Files={files_processed}, Atoms={atoms_added}. Verified APIs: {verified_apis}")
