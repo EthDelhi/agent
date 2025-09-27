@@ -71,75 +71,6 @@ def _clone_repo_to_memory(repo_url: str) -> dict:
         
     return codebase_files
 
-def identify_sponsor_apis_from_requirements(requirements: str) -> list:
-    """
-    Simulates AI extraction of required modules/APIs from sponsor's natural language requirements.
-    In a real system, ASI:One would perform this JSON extraction.
-    """
-
-    requirements = requirements.lower()
-
-    prompt = """You are an expert software engineer specializing in automated requirement analysis. Your task is to meticulously extract all mentioned APIs, libraries, SDKs, and specific function names from the provided sponsor requirements.
-
-        ### INSTRUCTIONS
-        1.  **Identify Technologies**: Scan the text for names of specific software products, APIs, libraries, or SDKs (e.g., "Twilio", "Stripe", "Firebase", "Topsis").
-        2.  **Identify Functions**: Scan the text for explicitly named functions (e.g., `calculate_score()`, `.create()`, `process_payment`).
-        3.  **Format the Output**: Return a single, valid JSON object. Do not include any text or explanation outside of the JSON object.
-        4.  **JSON Structure**: The JSON object must contain two keys: `apis_sdk_classes_and_libraries` and `functions`. The value for each key must be a list of strings.
-        5.  **Normalization**: All extracted names should be in lowercase.
-        6.  **Empty Lists**: If no APIs or functions are found, the value for the corresponding key must be an empty list `[]`.
-
-        ### EXAMPLE
-        **Input Text:**
-        This challenge requires integration of two key external components:
-        1. The project must use the Topsis library for multi-criteria decision analysis.
-        2. All user payment data must be processed using the Stripe API, specifically by calling the `stripe.Charge.create()` method.
-
-        **Output JSON:**
-        ```json
-        {
-        "`apis_sdk_classes_and_libraries": [
-            "topsis",
-            "stripe"
-        ],
-        "functions": [
-            "stripe.charge.create"
-        ]
-        }
-        TASK
-        Now, process the following requirements text according to the instructions and example above.
-        Input Text: 
-        """
-    try:
-        url = "https://api.asi1.ai/v1/chat/completions"
-        headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {ASI_ONE_API_KEY}",
-            }
-
-        messages = [
-            {"role": "system", "content": prompt},
-            {"role": "user", "content": requirements},
-            ]
-
-        data = {"model": "asi1-mini", "messages": messages}
-
-        response = requests.post(url, headers=headers, json=data)
-        if response.status_code != 200:
-            raise Exception(f"ASI.AI API error: {response.status_code}")
-
-        result = response.json()
-        print('\nAPI Response:', json.dumps(result, indent=2))
-        if not result.get('choices') or not result['choices'][0].get('message'):
-            raise Exception('Invalid API response format')
-            
-        content = result['choices'][0]['message']['content']
-        print('\nLLM Output:', content)
-        list = json.loads(content[7:-3])
-        return list['apis_sdk_classes_and_libraries']
-
-    except Exception as e:
-        print("Error:" , e)
 
 def generate_codebase_kg(metta: MeTTa, codebase_url: str, required_apis: list) -> tuple:
     """
@@ -210,7 +141,7 @@ def analyze_code_reuse(project_path: str, sponsor_repo_url: str) -> tuple:
 
 def perform_ai_reasoning(
     ctx: Context, metta: MeTTa, 
-    summary: str, requirements: str, 
+    summary: str, requirements: list, 
     atoms_count: int, repo_url: str,
     verified_apis: set,
     code_originality_score: float
@@ -221,7 +152,7 @@ def perform_ai_reasoning(
     
     usage_query = metta.run('!(match &self (query_pattern find_verified_imports $query) $query)')
     
-    required_count = len(identify_sponsor_apis_from_requirements(requirements))
+    required_count = len(requirements)
     verified_count = len(verified_apis)
     
     # Base Integration Score (Weighted by verified features / required features)
@@ -341,10 +272,10 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
         if action == "verify_project_integrity":
             repo_url = content.get("repo_url")
             summary = content.get("participant_summary", "N/A")
-            requirements = content.get("sponsor_requirements", "N/A")
+            requirements = content.get("list_apis", "N/A")
             sponsor_reference_apis = content.get("sponsor_apis", None)
 
-            required_apis = identify_sponsor_apis_from_requirements(requirements)
+            required_apis = requirements
             ctx.logger.info(f"Required APIs identified: {required_apis}")
          
             # reused_percent, original_percent, reuse_log = analyze_code_reuse(
@@ -357,7 +288,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             )
             ctx.logger.info(f"KG Built: Files={files_processed}, Atoms={atoms_added}. Verified APIs: {verified_apis}")
 
-            original_percent = 0.3
+            original_percent = 30
 
             response_text = perform_ai_reasoning(
                 ctx, metta_runner, summary, requirements, atoms_added, repo_url, 

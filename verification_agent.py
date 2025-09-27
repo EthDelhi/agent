@@ -6,6 +6,10 @@ import json
 from typing import Any, Dict
 import asyncio
 import time
+import os
+from dotenv import load_dotenv
+import requests
+
 class Request(Model):
     repo_url :str
     participant_summary : str
@@ -22,10 +26,12 @@ class Message(Model):
     text: str
     content: TextContent
  
+load_dotenv()
 
 ATOMSPACE_AGENT_ADDRESS = "agent1qfveg6xj53uaw97e3gcyp5uttfmrh5z939kv83z4vp8kjz3fpw3q585wquc"
 VERIFICATION_AGENT_SEED = "project verification agent unique seed"
-VERIFICATION_API_KEY = "sk_f7436e51471d472ca7e613980b172a6d1f80b9fa0725479b80c3cc5c906e2d92" 
+ASI_ONE_API_KEY = os.getenv("ASI_ONE_API_KEY")
+
 
 verification_agent = Agent(
     name="verification_agent",
@@ -36,25 +42,17 @@ verification_agent = Agent(
 
 received_responses = []
 
-# MOCK_GITHUB_REPO = "https://github.com/ishAN-121/APDP-Implementation"
-# SPONSOR_REFERENCE_REPO = "https://github.com/SponsorCorp/test-apis-only.git" 
-# SPONSOR_REQUIREMENTS = """
-# This challenge requires integration of two key external components:
-# 1. The project must use the Topsis SMS API for user notification.
-# 2. The project must use 'PDP' user data using the 'firebase' module/SDK.
-# 3. Bonus points for using the 'MeTTa' knowledge graph for complex reasoning.
-# """
-# PARTICIPANT_SUMMARY = """
-# We used the topsis for immediate SMS alerts and Firebase to manage user profiles. The logic employs a custom graph database for decision making.
-# """
 @verification_agent.on_rest_post("/rest/post", Request, Response)
 async def handle_post(ctx: Context, req: Request) -> Response:
     ctx.logger.info(req)
+   
+
+    list_apis=identify_sponsor_apis_from_requirements(requirements=req.sponsor_requirements)
     payload = {
         "action": "verify_project_integrity",
         "repo_url": req.repo_url,
         "participant_summary": req.participant_summary,
-        "sponsor_requirements": req.sponsor_requirements,
+        "list_apis": list_apis,
     }
     chat_message = ChatMessage(
         timestamp=datetime.utcnow(),
@@ -76,15 +74,6 @@ async def handle_post(ctx: Context, req: Request) -> Response:
         )
 
 
-    # return Response(
-    #     timestamp=int(time.time()),
-    #     text="Verification task successfully submitted. The result will be processed asynchronously.",
-    #     agent_address=ctx.agent.address,
-    #     response_from_agent = " "
-    # )
-            
-
-
 @verification_agent.on_event("startup")
 async def startup(ctx: Context):
     print(f"Verification Agent starting up...")
@@ -92,68 +81,75 @@ async def startup(ctx: Context):
     await asyncio.sleep(2)
    # await start_verification_workflow(ctx)
 
-# @verification_agent.on_message(model=ChatMessage)
-# async def handle_response(ctx: Context, sender: str, msg: ChatMessage):
-#     """
-#     Handles the final report sent back by the Atomspace Agent.
-#     """
-#     print(f"\n===========================================")
-#     print(f"=== FINAL REPORT RECEIVED FROM {sender} ===")
-#     print(f"===========================================")
-    
-#     try:
-#         if msg.content and len(msg.content) > 0:
-#             content_text = msg.content[0].text
-#             response_data = json.loads(content_text)
-            
-#             metrics = response_data.get('metrics', {})
-            
-#             print(f"VERIFICATION STATUS: {response_data.get('verification_status')}")
-#             print(f"INTEGRATION SCORE: {metrics.get('integration_score')}%")
-#             print(f"CODE ORIGINALITY: {metrics.get('code_originality_percentage')}%")
-#             print(f"VERIFIED APIs: {metrics.get('verified_apis')} of {metrics.get('required_apis')}")
-            
-#             # Display the AI-Generated Summary
-#             print("\n--- AI REASONING SUMMARY ---")
-#             print(response_data.get('ai_summary_report', 'N/A'))
-            
-#             # Display detailed log for UI rendering
-#             print("\n--- VERIFICATION LOG ---")
-#             for log in metrics.get('verification_log',):
-#                 print(f"  - {log['feature']}: {log['status']}")
-            
-#             received_responses.append(response_data)
-#         else:
-#             print("Empty content received")
-            
-#     except json.JSONDecodeError as e:
-#         ctx.logger.error(f"Error decoding JSON response: {e}")
-#         print(f"Raw response: {msg.content.text if msg.content else 'N/A'}")
-#     except Exception as e:
-#         ctx.logger.error(f"An unexpected error occurred during message handling: {e}")
+def identify_sponsor_apis_from_requirements(requirements: str) -> list:
+    """
+    Simulates AI extraction of required modules/APIs from sponsor's natural language requirements.
+    In a real system, ASI:One would perform this JSON extraction.
+    """
 
-# async def start_verification_workflow(ctx: Context):
-#     """
-#     Initiates the comprehensive verification process for a project.
-#     """
+    requirements = requirements.lower()
 
-#     payload = {
-#         "action": "verify_project_integrity",
-#         "repo_url": MOCK_GITHUB_REPO,
-#         "participant_summary": PARTICIPANT_SUMMARY,
-#         "sponsor_requirements": SPONSOR_REQUIREMENTS,
-#     }
+    prompt = """You are an expert software engineer specializing in automated requirement analysis. Your task is to meticulously extract all mentioned APIs, libraries, SDKs, and specific function names from the provided sponsor requirements.
 
-#     print(f"\n>>> Starting Verification for {MOCK_GITHUB_REPO} <<<")
-    
-#     chat_message = ChatMessage(
-#         timestamp=datetime.utcnow(),
-#         msg_id=str(uuid.uuid4()),
-#         content=[TextContent(text=json.dumps(payload))]
-#     )
-    
-#     await ctx.send(ATOMSPACE_AGENT_ADDRESS, chat_message)
-#     print(f"Request sent to Atomspace Agent successfully!")
+        ### INSTRUCTIONS
+        1.  **Identify Technologies**: Scan the text for names of specific software products, APIs, libraries, or SDKs (e.g., "Twilio", "Stripe", "Firebase", "Topsis").
+        2.  **Identify Functions**: Scan the text for explicitly named functions (e.g., `calculate_score()`, `.create()`, `process_payment`).
+        3.  **Format the Output**: Return a single, valid JSON object. Do not include any text or explanation outside of the JSON object.
+        4.  **JSON Structure**: The JSON object must contain two keys: `apis_sdk_classes_and_libraries` and `functions`. The value for each key must be a list of strings.
+        5.  **Normalization**: All extracted names should be in lowercase.
+        6.  **Empty Lists**: If no APIs or functions are found, the value for the corresponding key must be an empty list `[]`.
+
+        ### EXAMPLE
+        **Input Text:**
+        This challenge requires integration of two key external components:
+        1. The project must use the Topsis library for multi-criteria decision analysis.
+        2. All user payment data must be processed using the Stripe API, specifically by calling the `stripe.Charge.create()` method.
+
+        **Output JSON:**
+        ```json
+        {
+        "`apis_sdk_classes_and_libraries": [
+            "topsis",
+            "stripe"
+        ],
+        "functions": [
+            "stripe.charge.create"
+        ]
+        }
+        TASK
+        Now, process the following requirements text according to the instructions and example above.
+        Input Text: 
+        """
+    try:
+        url = "https://api.asi1.ai/v1/chat/completions"
+        headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {ASI_ONE_API_KEY}",
+            }
+
+        messages = [
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": requirements},
+            ]
+
+        data = {"model": "asi1-mini", "messages": messages}
+
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code != 200:
+            raise Exception(f"ASI.AI API error: {response.status_code}")
+
+        result = response.json()
+        print('\nAPI Response:', json.dumps(result, indent=2))
+        if not result.get('choices') or not result['choices'][0].get('message'):
+            raise Exception('Invalid API response format')
+            
+        content = result['choices'][0]['message']['content']
+        print('\nLLM Output:', content)
+        list = json.loads(content[7:-3])
+        return list['apis_sdk_classes_and_libraries']
+
+    except Exception as e:
+        print("Error:" , e)
 
 if __name__ == "__main__":
     verification_agent.run()
