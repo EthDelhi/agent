@@ -1,0 +1,842 @@
+{
+  "repository": {
+    "owner": "fetchai",
+    "name": "asi-alliance-wallet",
+    "url": "https://github.com/fetchai/asi-alliance-wallet"
+  },
+  "analysis_date": "2025-09-27T06:08:56.222277",
+  "graph_data": {
+    "line_changes_map": [
+      {
+        "date": "2024-06-28T09:00:33Z",
+        "additions": 1,
+        "deletions": 3,
+        "total": 4
+      },
+      {
+        "date": "2024-07-02T08:49:27Z",
+        "additions": 7770,
+        "deletions": 193,
+        "total": 7963
+      },
+      {
+        "date": "2024-07-03T08:50:34Z",
+        "additions": 1886,
+        "deletions": 715,
+        "total": 2601
+      },
+      {
+        "date": "2024-07-08T12:37:34Z",
+        "additions": 64292,
+        "deletions": 16623,
+        "total": 80915
+      },
+      {
+        "date": "2024-07-10T07:49:50Z",
+        "additions": 448,
+        "deletions": 156,
+        "total": 604
+      },
+      {
+        "date": "2024-07-19T09:35:40Z",
+        "additions": 679,
+        "deletions": 586,
+        "total": 1265
+      },
+      {
+        "date": "2024-07-20T11:54:51Z",
+        "additions": 1045,
+        "deletions": 283,
+        "total": 1328
+      },
+      {
+        "date": "2024-07-20T12:08:27Z",
+        "additions": 1,
+        "deletions": 1,
+        "total": 2
+      },
+      {
+        "date": "2024-07-20T12:08:40Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2024-07-24T12:58:49Z",
+        "additions": 29,
+        "deletions": 40,
+        "total": 69
+      },
+      {
+        "date": "2024-07-24T13:10:23Z",
+        "additions": 805,
+        "deletions": 529,
+        "total": 1334
+      },
+      {
+        "date": "2024-07-24T13:15:25Z",
+        "additions": 1,
+        "deletions": 1,
+        "total": 2
+      },
+      {
+        "date": "2024-07-24T13:17:03Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2024-08-12T05:16:36Z",
+        "additions": 2995,
+        "deletions": 2139,
+        "total": 5134
+      },
+      {
+        "date": "2024-08-14T12:50:56Z",
+        "additions": 103,
+        "deletions": 6,
+        "total": 109
+      },
+      {
+        "date": "2024-08-19T03:49:28Z",
+        "additions": 146,
+        "deletions": 62,
+        "total": 208
+      },
+      {
+        "date": "2024-08-19T03:52:52Z",
+        "additions": 3,
+        "deletions": 0,
+        "total": 3
+      },
+      {
+        "date": "2024-08-20T09:48:16Z",
+        "additions": 1381,
+        "deletions": 69,
+        "total": 1450
+      },
+      {
+        "date": "2024-08-20T09:48:55Z",
+        "additions": 91,
+        "deletions": 74,
+        "total": 165
+      },
+      {
+        "date": "2024-08-21T06:43:26Z",
+        "additions": 153,
+        "deletions": 19,
+        "total": 172
+      },
+      {
+        "date": "2024-08-21T06:43:39Z",
+        "additions": 29,
+        "deletions": 25,
+        "total": 54
+      },
+      {
+        "date": "2024-08-21T06:43:51Z",
+        "additions": 452,
+        "deletions": 54,
+        "total": 506
+      },
+      {
+        "date": "2024-08-21T06:44:08Z",
+        "additions": 618,
+        "deletions": 0,
+        "total": 618
+      },
+      {
+        "date": "2024-08-21T06:51:58Z",
+        "additions": 2192,
+        "deletions": 981,
+        "total": 3173
+      },
+      {
+        "date": "2024-08-27T04:35:06Z",
+        "additions": 4,
+        "deletions": 4,
+        "total": 8
+      },
+      {
+        "date": "2024-08-27T04:41:19Z",
+        "additions": 1,
+        "deletions": 1,
+        "total": 2
+      },
+      {
+        "date": "2024-08-27T04:43:16Z",
+        "additions": 1,
+        "deletions": 1,
+        "total": 2
+      },
+      {
+        "date": "2024-08-28T07:48:32Z",
+        "additions": 65862,
+        "deletions": 9,
+        "total": 65871
+      },
+      {
+        "date": "2024-08-28T08:07:43Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2024-09-02T12:02:46Z",
+        "additions": 113,
+        "deletions": 3,
+        "total": 116
+      },
+      {
+        "date": "2024-09-05T06:29:08Z",
+        "additions": 954,
+        "deletions": 300,
+        "total": 1254
+      },
+      {
+        "date": "2024-09-05T07:04:51Z",
+        "additions": 1,
+        "deletions": 1,
+        "total": 2
+      },
+      {
+        "date": "2024-09-05T07:05:16Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2024-09-11T07:28:58Z",
+        "additions": 1018,
+        "deletions": 943,
+        "total": 1961
+      },
+      {
+        "date": "2024-09-13T08:39:06Z",
+        "additions": 308,
+        "deletions": 8,
+        "total": 316
+      },
+      {
+        "date": "2024-09-18T09:07:27Z",
+        "additions": 645,
+        "deletions": 201,
+        "total": 846
+      },
+      {
+        "date": "2024-09-18T10:04:07Z",
+        "additions": 8,
+        "deletions": 172,
+        "total": 180
+      },
+      {
+        "date": "2024-09-24T07:05:50Z",
+        "additions": 337,
+        "deletions": 46,
+        "total": 383
+      },
+      {
+        "date": "2024-09-30T08:05:20Z",
+        "additions": 400,
+        "deletions": 313,
+        "total": 713
+      },
+      {
+        "date": "2024-09-30T08:42:09Z",
+        "additions": 2216,
+        "deletions": 397,
+        "total": 2613
+      },
+      {
+        "date": "2024-10-08T05:02:13Z",
+        "additions": 3,
+        "deletions": 3,
+        "total": 6
+      },
+      {
+        "date": "2024-10-16T10:01:37Z",
+        "additions": 4,
+        "deletions": 0,
+        "total": 4
+      },
+      {
+        "date": "2024-10-16T10:01:56Z",
+        "additions": 635,
+        "deletions": 60,
+        "total": 695
+      },
+      {
+        "date": "2024-10-17T12:23:31Z",
+        "additions": 208,
+        "deletions": 101,
+        "total": 309
+      },
+      {
+        "date": "2024-10-18T05:49:10Z",
+        "additions": 1826,
+        "deletions": 291,
+        "total": 2117
+      },
+      {
+        "date": "2024-10-21T08:27:27Z",
+        "additions": 31,
+        "deletions": 14,
+        "total": 45
+      },
+      {
+        "date": "2024-10-22T10:26:44Z",
+        "additions": 57,
+        "deletions": 27,
+        "total": 84
+      },
+      {
+        "date": "2024-10-22T11:38:58Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2024-11-08T12:06:41Z",
+        "additions": 16,
+        "deletions": 0,
+        "total": 16
+      },
+      {
+        "date": "2024-11-21T09:23:00Z",
+        "additions": 65,
+        "deletions": 26,
+        "total": 91
+      },
+      {
+        "date": "2024-11-21T09:23:32Z",
+        "additions": 4,
+        "deletions": 1,
+        "total": 5
+      },
+      {
+        "date": "2024-11-21T09:23:55Z",
+        "additions": 5,
+        "deletions": 1,
+        "total": 6
+      },
+      {
+        "date": "2024-11-21T09:24:12Z",
+        "additions": 163,
+        "deletions": 101,
+        "total": 264
+      },
+      {
+        "date": "2024-11-21T09:33:56Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2024-11-26T05:20:02Z",
+        "additions": 215,
+        "deletions": 222,
+        "total": 437
+      },
+      {
+        "date": "2024-11-26T05:23:05Z",
+        "additions": 56,
+        "deletions": 32,
+        "total": 88
+      },
+      {
+        "date": "2024-12-09T03:45:00Z",
+        "additions": 340,
+        "deletions": 546,
+        "total": 886
+      },
+      {
+        "date": "2024-12-09T03:45:14Z",
+        "additions": 764,
+        "deletions": 159,
+        "total": 923
+      },
+      {
+        "date": "2024-12-09T06:36:22Z",
+        "additions": 6,
+        "deletions": 6,
+        "total": 12
+      },
+      {
+        "date": "2024-12-09T09:11:50Z",
+        "additions": 46,
+        "deletions": 10,
+        "total": 56
+      },
+      {
+        "date": "2024-12-23T05:40:16Z",
+        "additions": 36,
+        "deletions": 16,
+        "total": 52
+      },
+      {
+        "date": "2024-12-23T05:40:27Z",
+        "additions": 686,
+        "deletions": 433,
+        "total": 1119
+      },
+      {
+        "date": "2024-12-24T10:15:51Z",
+        "additions": 152,
+        "deletions": 151,
+        "total": 303
+      },
+      {
+        "date": "2024-12-26T06:46:34Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2024-12-27T12:43:42Z",
+        "additions": 17,
+        "deletions": 16129,
+        "total": 16146
+      },
+      {
+        "date": "2024-12-31T08:59:00Z",
+        "additions": 244,
+        "deletions": 139,
+        "total": 383
+      },
+      {
+        "date": "2025-01-14T10:05:35Z",
+        "additions": 257,
+        "deletions": 375,
+        "total": 632
+      },
+      {
+        "date": "2025-01-15T08:09:53Z",
+        "additions": 1180,
+        "deletions": 1344,
+        "total": 2524
+      },
+      {
+        "date": "2025-01-16T10:57:50Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2025-01-27T04:30:58Z",
+        "additions": 1,
+        "deletions": 1,
+        "total": 2
+      },
+      {
+        "date": "2025-01-27T04:31:33Z",
+        "additions": 1,
+        "deletions": 1,
+        "total": 2
+      },
+      {
+        "date": "2025-01-27T09:24:04Z",
+        "additions": 1426,
+        "deletions": 930,
+        "total": 2356
+      },
+      {
+        "date": "2025-02-24T05:29:49Z",
+        "additions": 117,
+        "deletions": 34,
+        "total": 151
+      },
+      {
+        "date": "2025-03-10T08:59:17Z",
+        "additions": 186,
+        "deletions": 61,
+        "total": 247
+      },
+      {
+        "date": "2025-03-13T06:37:27Z",
+        "additions": 50,
+        "deletions": 51,
+        "total": 101
+      },
+      {
+        "date": "2025-03-17T10:05:12Z",
+        "additions": 100,
+        "deletions": 36,
+        "total": 136
+      },
+      {
+        "date": "2025-03-20T08:17:44Z",
+        "additions": 9,
+        "deletions": 9,
+        "total": 18
+      },
+      {
+        "date": "2025-03-20T08:18:08Z",
+        "additions": 5,
+        "deletions": 5,
+        "total": 10
+      },
+      {
+        "date": "2025-03-21T11:41:28Z",
+        "additions": 16,
+        "deletions": 8,
+        "total": 24
+      },
+      {
+        "date": "2025-03-21T14:10:39Z",
+        "additions": 14,
+        "deletions": 11,
+        "total": 25
+      },
+      {
+        "date": "2025-03-27T07:12:29Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2025-04-29T09:35:17Z",
+        "additions": 974,
+        "deletions": 690,
+        "total": 1664
+      },
+      {
+        "date": "2025-04-29T09:54:20Z",
+        "additions": 108,
+        "deletions": 5,
+        "total": 113
+      },
+      {
+        "date": "2025-04-29T09:58:18Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2025-05-26T06:46:43Z",
+        "additions": 1306,
+        "deletions": 111,
+        "total": 1417
+      },
+      {
+        "date": "2025-05-26T06:48:48Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2025-06-09T06:26:52Z",
+        "additions": 198,
+        "deletions": 115,
+        "total": 313
+      },
+      {
+        "date": "2025-06-09T06:31:59Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2025-06-11T10:37:09Z",
+        "additions": 119,
+        "deletions": 44,
+        "total": 163
+      },
+      {
+        "date": "2025-06-12T05:52:03Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2025-06-13T11:00:38Z",
+        "additions": 53,
+        "deletions": 59,
+        "total": 112
+      },
+      {
+        "date": "2025-06-13T11:04:38Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2025-07-03T08:05:52Z",
+        "additions": 162,
+        "deletions": 143,
+        "total": 305
+      },
+      {
+        "date": "2025-07-03T08:55:32Z",
+        "additions": 41,
+        "deletions": 11,
+        "total": 52
+      },
+      {
+        "date": "2025-07-11T06:04:59Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      },
+      {
+        "date": "2025-07-21T13:37:26Z",
+        "additions": 127,
+        "deletions": 106,
+        "total": 233
+      },
+      {
+        "date": "2025-07-28T11:03:21Z",
+        "additions": 6512,
+        "deletions": 3185,
+        "total": 9697
+      },
+      {
+        "date": "2025-08-01T06:23:09Z",
+        "additions": 4232,
+        "deletions": 3124,
+        "total": 7356
+      },
+      {
+        "date": "2025-08-11T06:27:15Z",
+        "additions": 62,
+        "deletions": 0,
+        "total": 62
+      },
+      {
+        "date": "2025-08-11T07:02:14Z",
+        "additions": 2,
+        "deletions": 2,
+        "total": 4
+      }
+    ],
+    "contributor_map": [
+      {
+        "user": "Thunnini",
+        "percentage": 22.77
+      },
+      {
+        "user": "agent-dominatrix",
+        "percentage": 12.49
+      },
+      {
+        "user": "sh-wallet",
+        "percentage": 10.61
+      },
+      {
+        "user": "AbbasAliLokhandwala",
+        "percentage": 6.25
+      },
+      {
+        "user": "delivan",
+        "percentage": 5.7
+      },
+      {
+        "user": "HeesungB",
+        "percentage": 5.49
+      },
+      {
+        "user": "dependabot[bot]",
+        "percentage": 5.49
+      },
+      {
+        "user": "imvinay84",
+        "percentage": 3.31
+      },
+      {
+        "user": "dimiandre",
+        "percentage": 3.28
+      },
+      {
+        "user": "blacktoast",
+        "percentage": 3.28
+      },
+      {
+        "user": "ivanshukhov",
+        "percentage": 3.28
+      },
+      {
+        "user": "ejfitzgerald",
+        "percentage": 2.61
+      },
+      {
+        "user": "austinchandra",
+        "percentage": 2.23
+      },
+      {
+        "user": "jonator",
+        "percentage": 2.21
+      },
+      {
+        "user": "noahsaso",
+        "percentage": 2.21
+      },
+      {
+        "user": "bangjelkoski",
+        "percentage": 2.21
+      },
+      {
+        "user": "omahs",
+        "percentage": 2.21
+      },
+      {
+        "user": "renfengshi",
+        "percentage": 2.21
+      },
+      {
+        "user": "UrAvgDeveloper",
+        "percentage": 0.56
+      },
+      {
+        "user": "wseungjin",
+        "percentage": 0.51
+      },
+      {
+        "user": "fwlashwork",
+        "percentage": 0.34
+      },
+      {
+        "user": "stassamhin",
+        "percentage": 0.25
+      },
+      {
+        "user": "samgin-nitka",
+        "percentage": 0.25
+      },
+      {
+        "user": "bryanchriswhite",
+        "percentage": 0.12
+      },
+      {
+        "user": "FelixNicolaeBucsa",
+        "percentage": 0.02
+      },
+      {
+        "user": "Catdotfish",
+        "percentage": 0.02
+      },
+      {
+        "user": "5A11",
+        "percentage": 0.02
+      },
+      {
+        "user": "giansalex",
+        "percentage": 0.02
+      },
+      {
+        "user": "VijaySharma815",
+        "percentage": 0.01
+      },
+      {
+        "user": "jonathan6620",
+        "percentage": 0.0
+      },
+      {
+        "user": "jrriehl",
+        "percentage": 0.0
+      },
+      {
+        "user": "samepant",
+        "percentage": 0.0
+      },
+      {
+        "user": "mattverse",
+        "percentage": 0.0
+      },
+      {
+        "user": "JDinesenEmoney",
+        "percentage": 0.0
+      },
+      {
+        "user": "emperorjm",
+        "percentage": 0.0
+      },
+      {
+        "user": "MikeSofaer",
+        "percentage": 0.0
+      },
+      {
+        "user": "mikedotexe",
+        "percentage": 0.0
+      },
+      {
+        "user": "xpt1x",
+        "percentage": 0.0
+      },
+      {
+        "user": "hanchon",
+        "percentage": 0.0
+      },
+      {
+        "user": "daeMOn63",
+        "percentage": 0.0
+      },
+      {
+        "user": "n4oah",
+        "percentage": 0.0
+      },
+      {
+        "user": "MaxweLL22-22",
+        "percentage": 0.0
+      },
+      {
+        "user": "davepuchyr",
+        "percentage": 0.0
+      },
+      {
+        "user": "cyborgshead",
+        "percentage": 0.0
+      },
+      {
+        "user": "sunnya97",
+        "percentage": 0.0
+      },
+      {
+        "user": "gnujoow",
+        "percentage": 0.0
+      },
+      {
+        "user": "Xiphiar",
+        "percentage": 0.0
+      },
+      {
+        "user": "dimakorzhovnik",
+        "percentage": 0.0
+      },
+      {
+        "user": "clockworkgr",
+        "percentage": 0.0
+      },
+      {
+        "user": "downing034",
+        "percentage": 0.0
+      },
+      {
+        "user": "dogemos",
+        "percentage": 0.0
+      }
+    ]
+  },
+  "authenticity_summary": {
+    "trust_score": 0.5,
+    "risk_level": "Medium",
+    "verdict_summary": "Analysis of 100 commits shows some concerns. Found 100 commits before hackathon start date (2025-09-25T00:00:00+00:00). Earliest: b5599f5.",
+    "key_anomalies": [
+      "Found 100 commits before hackathon start date (2025-09-25T00:00:00+00:00). Earliest: b5599f5"
+    ]
+  },
+  "metadata": {
+    "total_commits": 100,
+    "analyzed_commits": 10,
+    "total_contributors": 51,
+    "hackathon_period": {
+      "start": "2025-09-25T00:00:00+00:00",
+      "end": "2025-09-27T23:59:59+00:00"
+    },
+    "commit_timing": {
+      "before_hackathon": 100,
+      "during_hackathon": 0,
+      "after_hackathon": 0
+    },
+    "first_commit": "2025-08-11T07:02:14Z",
+    "last_commit": null
+  }
+}
