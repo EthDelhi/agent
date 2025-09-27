@@ -2,3 +2,4 @@
 .env
 /hackaudit_report.json
 /__pycache__/
+__pycache__
