@@ -30,12 +30,8 @@ class Response(Model):
 @ReceiverAgent.on_message(model=Message)
 async def message_handler(ctx: Context, sender: str, msg: Message):
     ctx.logger.info(f"Received message from {sender}: {msg.message}")
-    
-    # Store the response from agent2 in context storage
-    ctx.storage.set('last_response', {
-        'message': msg.message,
-        'timestamp': time.time()
-    })
+    # Simply respond to confirm receipt
+    await ctx.send(sender, Message(message="Message received"))
 
 class EmptyMessage(Model):
     pass
@@ -53,36 +49,27 @@ async def handle_get(ctx: Context) -> Dict[str, Any]:
 async def handle_post(ctx: Context, req: Request) -> Response:
     ctx.logger.info("Received POST request")
     
-    # Clear any old response
-    ctx.storage.set('last_response', None)
-    
-    # Send message to agent2
-    await ctx.send(AGENT2, Message(message=req.text))
-    
-    # Wait for a short time to get response from agent2
-    max_retries = 5
-    for _ in range(max_retries):
-        stored_response = ctx.storage.get('last_response')
-        if stored_response:
-            # Get response and clear storage
-            response = stored_response['message']
-            ctx.storage.set('last_response', None)  # Clear the response
-            
-            return Response(
-                text=f"Received: {req.text}",
-                agent_address=ctx.agent.address,
-                timestamp=int(time.time()),
-                response_from_agent=response
-            )
-        await asyncio.sleep(2)  # Wait for response
-    
-    # If no response received
-    return Response(
-        text=f"Received: {req.text}",
-        agent_address=ctx.agent.address,
-        timestamp=int(time.time()),
-        response_from_agent="No response from agent2"
+    # Send message to agent2 and wait for response
+    reply, status = await ctx.send_and_receive(
+        AGENT2,
+        Message(message=req.text),
+        response_type=Message
     )
+    
+    if isinstance(reply, Message):
+        return Response(
+            text=f"Received: {req.text}",
+            agent_address=ctx.agent.address,
+            timestamp=int(time.time()),
+            response_from_agent=reply.message
+        )
+    else:
+        return Response(
+            text=f"Received: {req.text}",
+            agent_address=ctx.agent.address,
+            timestamp=int(time.time()),
+            response_from_agent=f"Failed to get response: {status}"
+        )
  
 
 if __name__ == "__main__":
