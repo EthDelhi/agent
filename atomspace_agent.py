@@ -4,12 +4,19 @@ import os
 import ast
 import tempfile
 import shutil
-import re # For dynamic API extraction
 from datetime import datetime
 from hyperon import MeTTa, S, V, E, GroundingSpace, ValueAtom
 from uagents import Agent, Protocol, Context
 from uagents_core.contrib.protocols.chat import ChatMessage, TextContent
 import git
+from dotenv import load_dotenv
+import requests
+
+load_dotenv()
+
+
+ASI_ONE_API_KEY = os.getenv("ASI_ONE_API_KEY")
+
 
 atomspace_agent = Agent(
     name="atomspace_agent",
@@ -49,7 +56,6 @@ def _clone_repo_to_memory(repo_url: str) -> dict:
                 
                 try:
                     with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
-                        # Store file content in the in-memory dictionary.
                         codebase_files[relative_path] = f.read()
                 except Exception as e:
                     print(f"Warning: Could not read file {relative_path}: {e}")
@@ -70,9 +76,70 @@ def identify_sponsor_apis_from_requirements(requirements: str) -> list:
     Simulates AI extraction of required modules/APIs from sponsor's natural language requirements.
     In a real system, ASI:One would perform this JSON extraction.
     """
-    common_apis = ['asi:one', 'metta', 'uagents', 'fetch', 'stripe', 'twilio', 'aws', 'gcp', 'azure', 'Topsis','PDP']
-    found_apis = [api for api in common_apis if api in requirements]
-    return list(set(found_apis))
+
+    requirements = requirements.lower()
+
+    prompt = """You are an expert software engineer specializing in automated requirement analysis. Your task is to meticulously extract all mentioned APIs, libraries, SDKs, and specific function names from the provided sponsor requirements.
+
+        ### INSTRUCTIONS
+        1.  **Identify Technologies**: Scan the text for names of specific software products, APIs, libraries, or SDKs (e.g., "Twilio", "Stripe", "Firebase", "Topsis").
+        2.  **Identify Functions**: Scan the text for explicitly named functions (e.g., `calculate_score()`, `.create()`, `process_payment`).
+        3.  **Format the Output**: Return a single, valid JSON object. Do not include any text or explanation outside of the JSON object.
+        4.  **JSON Structure**: The JSON object must contain two keys: `apis_sdk_classes_and_libraries` and `functions`. The value for each key must be a list of strings.
+        5.  **Normalization**: All extracted names should be in lowercase.
+        6.  **Empty Lists**: If no APIs or functions are found, the value for the corresponding key must be an empty list `[]`.
+
+        ### EXAMPLE
+        **Input Text:**
+        This challenge requires integration of two key external components:
+        1. The project must use the Topsis library for multi-criteria decision analysis.
+        2. All user payment data must be processed using the Stripe API, specifically by calling the `stripe.Charge.create()` method.
+
+        **Output JSON:**
+        ```json
+        {
+        "`apis_sdk_classes_and_libraries": [
+            "topsis",
+            "stripe"
+        ],
+        "functions": [
+            "stripe.charge.create"
+        ]
+        }
+        TASK
+        Now, process the following requirements text according to the instructions and example above.
+        Input Text: 
+        """
+    try:
+        url = "https://api.asi1.ai/v1/chat/completions"
+        headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {ASI_ONE_API_KEY}",
+            }
+
+        messages = [
+            {"role": "system", "content": prompt},
+            {"role": "user", "content": requirements},
+            ]
+
+        data = {"model": "asi1-mini", "messages": messages}
+
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code != 200:
+            raise Exception(f"ASI.AI API error: {response.status_code}")
+
+        result = response.json()
+        print('\nAPI Response:', json.dumps(result, indent=2))
+        if not result.get('choices') or not result['choices'][0].get('message'):
+            raise Exception('Invalid API response format')
+            
+        content = result['choices'][0]['message']['content']
+        print('\nLLM Output:', content)
+        list = json.loads(content[7:-3])
+        return list['apis_sdk_classes_and_libraries']
+
+    except Exception as e:
+        print("Error:" , e)
 
 def generate_codebase_kg(metta: MeTTa, codebase_url: str, required_apis: list) -> tuple:
     """
@@ -93,7 +160,7 @@ def generate_codebase_kg(metta: MeTTa, codebase_url: str, required_apis: list) -
     for relative_path, content in codebase_files.items():
         if relative_path.endswith('.py'):
             try:
-                tree = ast.parse(content)
+                tree = ast.parse(content.lower())
                 files_processed += 1
 
                 for node in ast.walk(tree):
@@ -172,12 +239,71 @@ def perform_ai_reasoning(
     if final_score < 50:
         ai_summary_status = "Review required: Integration score is low and/or originality is questionable."
 
-    ai_summary = f"""
-    The verification analysis is complete for project submitted from {repo_url}.
-    **Integration Status:** The project claims to use {required_count} key sponsor technologies, and **{verified_count}** of these were structurally verified in the code graph (Verification Ratio: {integration_ratio:.2f}).
-    **Code Integrity:** The project exhibits **{code_originality_score:.2f}% Original Code**. This indicates the majority of the submitted code was original work for the hackathon and not simply reused from the sponsor's public documentation repository, addressing potential 'code dumping' fraud.
-    **Conclusion:** The final technical score of {final_score}% suggests a {ai_summary_status}. The code graph analysis provides objective evidence to support the claimed integration points.
+    prompt = """
+    You are an automated code verification analyst. Your task is to analyze the provided technical verification data and the project owner's summary. Your analysis must be strictly objective and based only on the data provided.
+
+    ### INSTRUCTIONS
+    1.  **Generate AI Summary**: Create a brief, neutral `ai_summary` of the project's status based strictly on the number of verified vs. required APIs. Your tone should be factual and impartial.
+    2.  **Analyze Owner's Summary**: Compare the `owner_summary` to the provided data.
+    3.  **Score Accuracy**: Assign an `accuracy_score` from 0.0 to 1.0, where 1.0 means the summary is perfectly aligned with the data, and 0.0 means it is completely contradictory.
+    4.  **Provide Reasoning**: Write a brief `reasoning` string explaining your score. Point out any discrepancies or exaggerations in the owner's summary.
+    5.  **Assign Verdict**: Provide a one-word `verdict` from the following options: "Accurate", "Mostly_Accurate", "Slightly_Inaccurate", "Misleading".
+    6.  **Format Output**: Return the entire output as a single, valid JSON object with no explanatory text before or after it.
+
+    ### EXAMPLE
+    **Input Data:**
+    - Verified APIs: 1
+    - Required APIs: 3
+    - Owner's Summary: "We successfully integrated all the key sponsor technologies to build a robust and complete solution."
+
+    **Output JSON:**
+    ```json
+    {
+    "ai_summary": "The project has structurally verified the integration of 1 out of the 3 required APIs, indicating partial fulfillment of the technical requirements.",
+    "owner_summary_analysis": {
+        "accuracy_score": 0.2,
+        "reasoning": "The owner's summary claims 'successful integration of all key technologies', which is contradicted by the data showing only 1 of 3 required APIs was verified.",
+        "verdict": "Misleading"
+        }
+    }
+
+
+    Now, perform the analysis on the following data.
+    Input Data:
+    Verified APIs: {verified_count}
+    Required APIs: {required_count}
+    Owner's Summary: {summary}
     """
+    try:
+        url = "https://api.asi1.ai/v1/chat/completions"
+        headers = {
+                "Content-Type": "application/json",
+                "Authorization": f"Bearer {ASI_ONE_API_KEY}",
+            }
+
+        messages = [
+            {"role": "user", "content": prompt},
+            ]
+
+        data = {"model": "asi1-mini", "messages": messages}
+
+        response = requests.post(url, headers=headers, json=data)
+        if response.status_code != 200:
+            raise Exception(f"ASI.AI API error: {response.status_code}")
+
+        result = response.json()
+        print('\nAPI Response:', json.dumps(result, indent=2))
+        if not result.get('choices') or not result['choices'][0].get('message'):
+            raise Exception('Invalid API response format')
+            
+        content = result['choices'][0]['message']['content']
+        print('\nLLM Output:', content)
+        list = json.loads(content[7:-3])
+        
+
+    except Exception as e:
+        print("Error", e)
+
     
     report = {
         "project_url": repo_url,
@@ -187,7 +313,7 @@ def perform_ai_reasoning(
             "required_apis": required_count,
             "verified_apis": verified_count,
             "atoms_count": atoms_count,
-            "code_originality_percentage": code_originality_score,
+            "summary_accuracy": list["ai_summary"]["accuracy_score"],
             "verification_log": [
                 {"feature": "Required APIs Verified", "status": f"{verified_count} of {required_count}"},
                 {"feature": "Code Originality", "status": f"{code_originality_score}%"},
@@ -195,7 +321,7 @@ def perform_ai_reasoning(
         },
         "participant_summary_input": summary,
         "sponsor_requirements_input": requirements,
-        "ai_summary_report": ai_summary
+        "ai_summary_report": list["ai_summary"]
     }
     
     return json.dumps(report, indent=2)
@@ -208,7 +334,6 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     """
     
     try:
-        print(msg)
         raw_text = msg.content[0].text
         content = json.loads(raw_text)
         action = content.get("action")
