@@ -3,7 +3,7 @@ import json
 import requests
 from typing import Dict
 from dotenv import load_dotenv
-from utils import validate_dates, get_commit_history, get_contributor_stats
+from utils import validate_dates, get_commit_history, get_contributor_stats, get_commits_before_date,get_total_commit_count,get_commits_after_date
 
 load_dotenv()
 
@@ -70,6 +70,9 @@ Please provide your analysis in the following JSON format:
         "contributor_map": [
             {"user": "username", "commits": N, "additions": M, "deletions": D, "percentage": P}
         ]
+        "metadata" : {
+            "commits_before": "commits_before","commits_all":"commits_all","commits_after":"commits_after"
+        }
     },
     "authenticity_summary": {
         "trust_score": 0.0-1.0,
@@ -119,7 +122,12 @@ Focus on providing clear, actionable insights about the project's development du
                         }
                         for commit in commits
                     ],
-                    "contributor_map": contributors
+                    "contributor_map": contributors,
+                    "metadata": {
+                        "commits_before": get_commits_before_date(owner,repo,self.hackathon_start,self.github_headers),
+                        "commits_all": get_total_commit_count(owner,repo,self.github_headers),
+                        "commits_after": get_commits_after_date(owner,repo,self.hackathon_end,self.github_headers)
+                    }
                 }
             }
 
@@ -187,7 +195,8 @@ Focus on providing clear, actionable insights about the project's development du
                 return {
                     'graph_data': {
                         'line_changes_map': project_data.get('graph_data', {}).get('line_changes_map', []),
-                        'contributor_map': project_data.get('contributor_stats', [])
+                        'contributor_map': project_data.get('contributor_stats', []),
+                        'metadata':{"commits_before":0,"commits_all":0}
                     },
                     'authenticity_summary': {
                         'trust_score': 0.1,

@@ -200,7 +200,7 @@ def perform_ai_reasoning(
 
 
     Now, perform the analysis on the following data."""
-    user_prompt = """
+    user_prompt = f"""
         Input Data:
         Verified APIs: {verified_count}
         Required APIs: {required_count}

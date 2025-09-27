@@ -102,6 +102,92 @@ def get_commit_history(owner: str, repo: str, start_date: datetime, end_date: da
         
     return all_commits
 
+
+def get_commits_before_date(owner: str, repo: str, before_date: datetime, github_headers: Dict) -> List[Dict]:
+    """
+    Fetch all commits before a given date from a GitHub repository.
+    Handles pagination until no more commits are available.
+    """
+    commits_url = f"https://api.github.com/repos/{owner}/{repo}/commits"
+    all_commits = []
+    page = 1
+
+    while True:
+        params = {
+            "until": before_date.isoformat(),
+            "per_page": 100,  # max allowed by GitHub
+            "page": page
+        }
+
+        response = requests.get(commits_url, headers=github_headers, params=params)
+        if response.status_code != 200:
+            raise Exception(f"GitHub API error: {response.status_code} - {response.text}")
+
+        commits = response.json()
+        if not commits:
+            break  # no more commits, exit loop
+
+        all_commits.extend(commits)
+        page += 1
+
+    return len(all_commits)
+
+
+def get_total_commit_count(owner: str, repo: str, github_headers: Dict) -> int:
+    """
+    Count all commits in a GitHub repository.
+    """
+    commits_url = f"https://api.github.com/repos/{owner}/{repo}/commits"
+    total_count = 0
+    page = 1
+
+    while True:
+        params = {
+            "per_page": 100,  # max allowed
+            "page": page
+        }
+
+        response = requests.get(commits_url, headers=github_headers, params=params)
+        if response.status_code != 200:
+            raise Exception(f"GitHub API error: {response.status_code} - {response.text}")
+
+        commits = response.json()
+        if not commits:
+            break
+
+        total_count += len(commits)
+        page += 1
+
+    return total_count
+
+def get_commits_after_date(owner: str, repo: str, after_date: datetime, github_headers: Dict) -> List[Dict]:
+    """
+    Fetch all commits before a given date from a GitHub repository.
+    Handles pagination until no more commits are available.
+    """
+    commits_url = f"https://api.github.com/repos/{owner}/{repo}/commits"
+    all_commits = []
+    page = 1
+
+    while True:
+        params = {
+            "since": after_date.isoformat(),
+            "per_page": 100,  # max allowed by GitHub
+            "page": page
+        }
+
+        response = requests.get(commits_url, headers=github_headers, params=params)
+        if response.status_code != 200:
+            raise Exception(f"GitHub API error: {response.status_code} - {response.text}")
+
+        commits = response.json()
+        if not commits:
+            break  # no more commits, exit loop
+
+        all_commits.extend(commits)
+        page += 1
+
+    return len(all_commits)
 def get_contributor_stats(owner: str, repo: str, github_headers: Dict) -> List[Dict]:
     """Get detailed contributor statistics for the last 20 commits."""
     # First get the last 20 commits

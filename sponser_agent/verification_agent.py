@@ -19,7 +19,7 @@ class Response(Model):
     text : str
     agent_address : str
     timestamp : int
-    response_from_agent : str
+    response_from_agent : Dict
 
 class Message(Model):
     timestamp: int
@@ -66,12 +66,13 @@ async def handle_post(ctx: Context, req: Request) -> Response:
     )
 
     final_report = reply.content[0].text if reply.content else "{}"
+    json_report=json.loads(final_report)    
     return Response(
-            text=f"Successfully received report for: {req.repo_url}",
-            agent_address=ctx.agent.address,
-            timestamp=int(time.time()),
-            response_from_agent=final_report
-        )
+        text=f"Successfully received report for: {req.repo_url}",
+        agent_address=ctx.agent.address,
+        timestamp=int(time.time()),
+        response_from_agent=json.loads(final_report) 
+)
 
 
 @verification_agent.on_event("startup")
