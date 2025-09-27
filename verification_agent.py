@@ -1,12 +1,21 @@
-from uagents import Agent, Context
-# Ensure you are using uagents_core for the protocol imports
+from uagents import Agent, Context, Model
 from uagents_core.contrib.protocols.chat import ChatMessage, TextContent
 from datetime import datetime
 import uuid
 import json
+from typing import Any, Dict
 import asyncio
 
-ATOMSPACE_AGENT_ADDRESS = "agent1qf963737txup24zr555u9fm8ysd4wdlutk3tc0pmj6tx4quja399stgd4cp"
+class Request(Model):
+    text: str
+ 
+class Response(Model):
+    timestamp: int
+    text: str
+    agent_address: str
+ 
+
+ATOMSPACE_AGENT_ADDRESS = "agent1qfveg6xj53uaw97e3gcyp5uttfmrh5z939kv83z4vp8kjz3fpw3q585wquc"
 VERIFICATION_AGENT_SEED = "project verification agent unique seed"
 VERIFICATION_API_KEY = "sk_f7436e51471d472ca7e613980b172a6d1f80b9fa0725479b80c3cc5c906e2d92" 
 
@@ -19,7 +28,7 @@ verification_agent = Agent(
 
 received_responses = []
 
-MOCK_GITHUB_REPO = "https://github.com/hacker/project-cool.git"
+MOCK_GITHUB_REPO = "https://github.com/ishAN-121/APDP-Implementation"
 SPONSOR_REFERENCE_REPO = "https://github.com/SponsorCorp/test-apis-only.git" 
 SPONSOR_REQUIREMENTS = """
 This challenge requires integration of two key external components:
@@ -30,6 +39,11 @@ This challenge requires integration of two key external components:
 PARTICIPANT_SUMMARY = """
 We used the twilio API for immediate SMS alerts and Firebase to manage user profiles. The logic employs a custom graph database for decision making.
 """
+@verification_agent.on_rest_post("/submit", Request, Response)
+async def handle_post(ctx: Context, req: Request) -> Response:
+    ctx.logger.info(req)
+    return Response(...)
+
 
 @verification_agent.on_event("startup")
 async def startup(ctx: Context):
@@ -49,7 +63,7 @@ async def handle_response(ctx: Context, sender: str, msg: ChatMessage):
     
     try:
         if msg.content and len(msg.content) > 0:
-            content_text = msg.content.text
+            content_text = msg.content[0].text
             response_data = json.loads(content_text)
             
             metrics = response_data.get('metrics', {})
@@ -82,13 +96,13 @@ async def start_verification_workflow(ctx: Context):
     """
     Initiates the comprehensive verification process for a project.
     """
+
     payload = {
         "action": "verify_project_integrity",
         "repo_url": MOCK_GITHUB_REPO,
         "participant_summary": PARTICIPANT_SUMMARY,
         "sponsor_requirements": SPONSOR_REQUIREMENTS,
-        "sponsor_reference_repo": SPONSOR_REFERENCE_REPO,
-        "sponsor_api_key": VERIFICATION_API_KEY
+        "sponsor_apis": SPONSOR_REFERENCE_REPO,
     }
 
     print(f"\n>>> Starting Verification for {MOCK_GITHUB_REPO} <<<")
@@ -99,7 +113,6 @@ async def start_verification_workflow(ctx: Context):
         content=[TextContent(text=json.dumps(payload))]
     )
     
-    # Send the consolidated message to the Atomspace Agent
     await ctx.send(ATOMSPACE_AGENT_ADDRESS, chat_message)
     print(f"Request sent to Atomspace Agent successfully!")
 

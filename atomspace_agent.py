@@ -2,7 +2,6 @@ import json
 import uuid
 import os
 import ast
-import subprocess
 import tempfile
 import shutil
 import re # For dynamic API extraction
@@ -10,6 +9,7 @@ from datetime import datetime
 from hyperon import MeTTa, S, V, E, GroundingSpace, ValueAtom
 from uagents import Agent, Protocol, Context
 from uagents_core.contrib.protocols.chat import ChatMessage, TextContent
+import git
 
 atomspace_agent = Agent(
     name="atomspace_agent",
@@ -26,13 +26,45 @@ except Exception:
     metta_runner = MeTTa()
     metta_runner._space = project_space
     
-def clone_github_repo(repo_url, destination):
+def _clone_repo_to_memory(repo_url: str) -> dict:
+    """
+    Clones a Git repository to a temporary directory on disk,
+    reads all file contents into an in-memory dictionary, and then
+    immediately deletes the temporary directory.
+    """
+    codebase_files = {} 
+    temp_dir = tempfile.mkdtemp()
+    
     try:
-        subprocess.run(['git', 'clone', repo_url, destination], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(f"Successfully cloned {repo_url} to {destination}")
-    except subprocess.CalledProcessError as e:
-        print(f"Failed to clone repository: {e.stderr.decode()}")
-        raise
+        print(f"Cloning {repo_url} into a temporary location...")
+        git.Repo.clone_from(repo_url, temp_dir)
+        print("Cloning complete. Reading files into memory...")
+
+        # Walk through the temporary directory and load file contents into the dictionary.
+        for root, dirs, files in os.walk(temp_dir):
+            dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['__pycache__', 'node_modules']]
+            
+            for file in files:
+                file_path = os.path.join(root, file)
+                relative_path = os.path.relpath(file_path, temp_dir)
+                
+                try:
+                    with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                        # Store file content in the in-memory dictionary.
+                        codebase_files[relative_path] = f.read()
+                except Exception as e:
+                    print(f"Warning: Could not read file {relative_path}: {e}")
+
+    except git.exc.GitCommandError as e:
+        print(f"Error: Failed to clone repository: {e}")
+        return {}
+    finally:
+        # **Crucially, clean up and remove the temporary directory from the disk.**
+        print("Deleting temporary directory...")
+        shutil.rmtree(temp_dir)
+        print("Repository contents are now only in memory.")
+        
+    return codebase_files
 
 def identify_sponsor_apis_from_requirements(requirements: str) -> list:
     """
@@ -43,7 +75,7 @@ def identify_sponsor_apis_from_requirements(requirements: str) -> list:
     found_apis = [api for api in common_apis if api.lower() in requirements.lower()]
     return list(set(found_apis))
 
-def initialize_codebase_knowledge_graph(metta: MeTTa, codebase_path: str, required_apis: list) -> tuple:
+def initialize_codebase_knowledge_graph(metta: MeTTa, codebase_url: str, required_apis: list) -> tuple:
     """
     Clears the space, builds the KG, and identifies usage of required APIs.
     """
@@ -53,19 +85,12 @@ def initialize_codebase_knowledge_graph(metta: MeTTa, codebase_path: str, requir
     files_processed = 0
     atoms_added = 0
     verified_apis = set()
+    codebase_files = _clone_repo_to_memory(codebase_url)
+    print(len(codebase_files))
 
-    for root, dirs, files in os.walk(codebase_path):
-        dirs[:] = [d for d in dirs if not d.startswith('.') and d not in ['__pycache__', 'node_modules', 'venv', 'env']]
-        
-        for file in files:
-            if file.endswith('.py'): # Focusing on Python for AST parsing
-                file_path = os.path.join(root, file)
-                relative_path = os.path.relpath(file_path, codebase_path)
-                
-                try:
-                    with open(file_path, 'r', encoding='utf-8') as f:
-                        content = f.read()
-                    
+    for relative_path, content in codebase_files.items():
+            if relative_path.endswith('.py'):       
+                try:    
                     tree = ast.parse(content)
                     files_processed += 1
                     
@@ -95,9 +120,9 @@ def initialize_codebase_knowledge_graph(metta: MeTTa, codebase_path: str, requir
                             add_atom_safe(E(S("defines_class"), S(relative_path), S(node.name)))
                         
                 except Exception as e:
-                    print(f"Error parsing {file_path}: {e}")
+                    print(f"Error parsing {relative_path}: {e}")
     
-    metta_runner.run('!(add-atom &self (query_pattern find_verified_imports "(match &self (imports_required_api $file $module) (pair $file $module)))")')
+    metta_runner.run('!(add-atom &self (query_pattern find_verified_imports \"(match &self (imports_required_api $file $module) (pair $file $module))"))')
     
     return files_processed, atoms_added, verified_apis
 
@@ -118,7 +143,6 @@ def analyze_code_reuse(project_path: str, sponsor_repo_url: str) -> tuple:
     percentage_reused = round((lines_reused_simulated / total_loc) * 100, 2)
     percentage_original = round(100 - percentage_reused, 2)
     
-    # Log the assumption for transparency
     log_message = f"Simulated analysis against {sponsor_repo_url} assumed {total_loc} LOC analyzed."
     
     return percentage_reused, percentage_original, log_message
@@ -136,9 +160,6 @@ def perform_ai_reasoning(
     
     usage_query = metta.run('!(match &self (query_pattern find_verified_imports $query) $query)')
     
-    # --- 2. Calculate Metrics & Scoring ---
-    
-    # Scoring based on completion of requirements and originality
     required_count = len(identify_sponsor_apis_from_requirements(requirements))
     verified_count = len(verified_apis)
     
@@ -192,11 +213,9 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     Receives the consolidated verification request and executes the analysis.
     """
     
-    temp_dir_participant = None
-    temp_dir_sponsor = None # For cloning sponsor reference repo
-    
     try:
-        raw_text = msg.content.text
+        print(msg)
+        raw_text = msg.content[0].text
         content = json.loads(raw_text)
         action = content.get("action")
 
@@ -204,30 +223,23 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
             repo_url = content.get("repo_url")
             summary = content.get("participant_summary", "N/A")
             requirements = content.get("sponsor_requirements", "N/A")
-            sponsor_reference_repo = content.get("sponsor_reference_repo", None)
-            api_key = content.get("sponsor_api_key") # For future LLM calls
+            sponsor_reference_apis = content.get("sponsor_apis", None)
 
-            # 1. Identify required APIs dynamically
             required_apis = identify_sponsor_apis_from_requirements(requirements)
             ctx.logger.info(f"Required APIs identified: {required_apis}")
-
-            # 2. Clone Participant Repository
-            temp_dir_participant = tempfile.mkdtemp()
-            clone_github_repo(repo_url, temp_dir_participant)
+         
+            # reused_percent, original_percent, reuse_log = analyze_code_reuse(
+            #     temp_dir_participant, sponsor_reference_repo
+            # )
+            # ctx.logger.info(f"Code Reuse Analysis: {reuse_log}")
             
-            # 3. Code Reuse Analysis (Cloning Sponsor Repo is part of this simulation)
-            reused_percent, original_percent, reuse_log = analyze_code_reuse(
-                temp_dir_participant, sponsor_reference_repo
-            )
-            ctx.logger.info(f"Code Reuse Analysis: {reuse_log}")
-            
-            # 4. Build Code Knowledge Graph and Verify APIs
             files_processed, atoms_added, verified_apis = initialize_codebase_knowledge_graph(
-                metta_runner, temp_dir_participant, required_apis
+                metta_runner, repo_url, required_apis
             )
             ctx.logger.info(f"KG Built: Files={files_processed}, Atoms={atoms_added}. Verified APIs: {verified_apis}")
 
-            # 5. Perform Reasoning and Report Generation (Simulated LLM call)
+            original_percent = 0.3
+
             response_text = perform_ai_reasoning(
                 ctx, metta_runner, summary, requirements, atoms_added, repo_url, 
                 verified_apis, original_percent
@@ -244,15 +256,7 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
         import traceback
         traceback.print_exc()
         response_text = json.dumps({"error": f"Internal agent analysis failed: {str(e)}"})
-
-    finally:
-        # Clean up the temporary directories
-        if temp_dir_participant and os.path.exists(temp_dir_participant):
-            shutil.rmtree(temp_dir_participant)
-        if temp_dir_sponsor and os.path.exists(temp_dir_sponsor):
-            shutil.rmtree(temp_dir_sponsor)
             
-    # Send response back to the Verification Agent
     response_msg = ChatMessage(
         timestamp=datetime.utcnow(),
         msg_id=str(uuid.uuid4()),
@@ -260,7 +264,6 @@ async def handle_chat_message(ctx: Context, sender: str, msg: ChatMessage):
     )
     await ctx.send(sender, response_msg)
 
-# Include the protocol in the agent
 atomspace_agent.include(chat_protocol)
 
 @atomspace_agent.on_event("startup")
