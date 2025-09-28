@@ -3,7 +3,14 @@ import json
 import requests
 from typing import Dict
 from dotenv import load_dotenv
-from utils import validate_dates, get_commit_history, get_contributor_stats, get_commits_before_date,get_total_commit_count,get_commits_after_date
+from utils import (
+    validate_dates,
+    get_commit_history,
+    get_contributor_stats,
+    get_commits_before_date,
+    get_total_commit_count,
+    get_commits_after_date,
+)
 
 load_dotenv()
 
@@ -124,11 +131,17 @@ Focus on providing clear, actionable insights about the project's development du
                     ],
                     "contributor_map": contributors,
                     "metadata": {
-                        "commits_before": get_commits_before_date(owner,repo,self.hackathon_start,self.github_headers),
-                        "commits_all": get_total_commit_count(owner,repo,self.github_headers),
-                        "commits_after": get_commits_after_date(owner,repo,self.hackathon_end,self.github_headers)
-                    }
-                }
+                        "commits_before": get_commits_before_date(
+                            owner, repo, self.hackathon_start, self.github_headers
+                        ),
+                        "commits_all": get_total_commit_count(
+                            owner, repo, self.github_headers
+                        ),
+                        "commits_after": get_commits_after_date(
+                            owner, repo, self.hackathon_end, self.github_headers
+                        ),
+                    },
+                },
             }
 
             print(project_data)
@@ -159,51 +172,63 @@ Focus on providing clear, actionable insights about the project's development du
                 raise Exception(f"ASI.AI API error: {response.status_code}")
 
             result = response.json()
-            print('\nAPI Response:', json.dumps(result, indent=2))
-            
-            if not result.get('choices') or not result['choices'][0].get('message'):
-                raise Exception('Invalid API response format')
-                
-            content = result['choices'][0]['message']['content']
-            print('\nLLM Output:', content)
-            
+            print("\nAPI Response:", json.dumps(result, indent=2))
+
+            if not result.get("choices") or not result["choices"][0].get("message"):
+                raise Exception("Invalid API response format")
+
+            content = result["choices"][0]["message"]["content"]
+            print("\nLLM Output:", content)
+
             try:
                 # First try to parse it as a direct JSON
                 analysis = json.loads(content)
-                
+
                 # Verify it has the required structure
-                if not isinstance(analysis, dict) or 'graph_data' not in analysis or 'authenticity_summary' not in analysis:
-                    raise json.JSONDecodeError('Invalid response structure', content, 0)
-                    
+                if (
+                    not isinstance(analysis, dict)
+                    or "graph_data" not in analysis
+                    or "authenticity_summary" not in analysis
+                ):
+                    raise json.JSONDecodeError("Invalid response structure", content, 0)
+
                 return analysis
             except json.JSONDecodeError as e:
                 # If the content contains markdown code block, try to extract JSON from it
-                if '```json' in content:
+                if "```json" in content:
                     try:
-                        json_part = content.split('```json')[1].split('```')[0].strip()
+                        json_part = content.split("```json")[1].split("```")[0].strip()
                         analysis = json.loads(json_part)
-                        
+
                         # Verify it has the required structure
-                        if not isinstance(analysis, dict) or 'graph_data' not in analysis or 'authenticity_summary' not in analysis:
-                            raise json.JSONDecodeError('Invalid response structure', json_part, 0)
-                            
+                        if (
+                            not isinstance(analysis, dict)
+                            or "graph_data" not in analysis
+                            or "authenticity_summary" not in analysis
+                        ):
+                            raise json.JSONDecodeError(
+                                "Invalid response structure", json_part, 0
+                            )
+
                         return analysis
                     except (json.JSONDecodeError, IndexError):
                         pass
-                        
+
                 # If all parsing attempts fail, create a structured response
                 return {
-                    'graph_data': {
-                        'line_changes_map': project_data.get('graph_data', {}).get('line_changes_map', []),
-                        'contributor_map': project_data.get('contributor_stats', []),
-                        'metadata':{"commits_before":0,"commits_all":0}
+                    "graph_data": {
+                        "line_changes_map": project_data.get("graph_data", {}).get(
+                            "line_changes_map", []
+                        ),
+                        "contributor_map": project_data.get("contributor_stats", []),
+                        "metadata": {"commits_before": 0, "commits_all": 0},
                     },
-                    'authenticity_summary': {
-                        'trust_score': 0.1,
-                        'risk_level': 'High',
-                        'verdict_summary': 'Failed to parse LLM response into valid JSON format',
-                        'key_anomalies': ['LLM response was not in valid JSON format']
-                    }
+                    "authenticity_summary": {
+                        "trust_score": 0.1,
+                        "risk_level": "High",
+                        "verdict_summary": "Failed to parse LLM response into valid JSON format",
+                        "key_anomalies": ["LLM response was not in valid JSON format"],
+                    },
                 }
 
         except Exception as e:

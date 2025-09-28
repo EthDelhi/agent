@@ -10,25 +10,31 @@ import os
 from dotenv import load_dotenv
 import requests
 
+
 class Request(Model):
-    repo_url :str
-    participant_summary : str
-    sponsor_requirements : str
+    repo_url: str
+    participant_summary: str
+    sponsor_requirements: str
+
 
 class Response(Model):
-    text : str
-    agent_address : str
-    timestamp : int
-    response_from_agent : Dict
+    text: str
+    agent_address: str
+    timestamp: int
+    response_from_agent: Dict
+
 
 class Message(Model):
     timestamp: int
     text: str
     content: TextContent
- 
+
+
 load_dotenv()
 
-ATOMSPACE_AGENT_ADDRESS = "agent1qfveg6xj53uaw97e3gcyp5uttfmrh5z939kv83z4vp8kjz3fpw3q585wquc"
+ATOMSPACE_AGENT_ADDRESS = (
+    "agent1qfveg6xj53uaw97e3gcyp5uttfmrh5z939kv83z4vp8kjz3fpw3q585wquc"
+)
 VERIFICATION_AGENT_SEED = "project verification agent unique seed"
 ASI_ONE_API_KEY = os.getenv("ASI_ONE_API_KEY")
 
@@ -37,17 +43,19 @@ verification_agent = Agent(
     name="verification_agent",
     seed=VERIFICATION_AGENT_SEED,
     port=8002,
-    endpoint="http://127.0.0.1:8002/submit"
+    endpoint="http://127.0.0.1:8002/submit",
 )
 
 received_responses = []
 
+
 @verification_agent.on_rest_post("/rest/post", Request, Response)
 async def handle_post(ctx: Context, req: Request) -> Response:
     ctx.logger.info(req)
-   
 
-    list_apis=identify_sponsor_apis_from_requirements(requirements=req.sponsor_requirements)
+    list_apis = identify_sponsor_apis_from_requirements(
+        requirements=req.sponsor_requirements
+    )
     payload = {
         "action": "verify_project_integrity",
         "repo_url": req.repo_url,
@@ -57,22 +65,43 @@ async def handle_post(ctx: Context, req: Request) -> Response:
     chat_message = ChatMessage(
         timestamp=datetime.utcnow(),
         msg_id=str(uuid.uuid4()),
-        content=[TextContent(text=json.dumps(payload))]
+        content=[TextContent(text=json.dumps(payload))],
     )
-    reply, status = await ctx.send_and_receive(
-        ATOMSPACE_AGENT_ADDRESS,
-        chat_message,
-        response_type=ChatMessage
-    )
+    try:
+        reply, status = await ctx.send_and_receive(
+            ATOMSPACE_AGENT_ADDRESS,
+            chat_message,
+            response_type=ChatMessage
+        )
 
-    final_report = reply.content[0].text if reply.content else "{}"
-    json_report=json.loads(final_report)    
-    return Response(
-        text=f"Successfully received report for: {req.repo_url}",
-        agent_address=ctx.agent.address,
-        timestamp=int(time.time()),
-        response_from_agent=json.loads(final_report) 
-)
+        if not reply or not reply.content:
+            # Fallback in case no reply or no content
+            final_report = "{}"
+        else:
+            final_report = reply.content[0].text or "{}"
+
+        # Try parsing into JSON
+        try:
+            json_report = json.loads(final_report)
+        except Exception:
+            json_report = {"error": "Invalid JSON in reply", "raw": final_report}
+
+        return Response(
+            text=f"Successfully received report for: {req.repo_url}",
+            agent_address=ctx.agent.address,
+            timestamp=int(time.time()),
+            response_from_agent=json_report,
+        )
+
+    except Exception as e:
+        # Handle communication or parsing failures
+        return Response(
+            text=f"Failed to receive report for: {req.repo_url}. Error: {str(e)}",
+            agent_address=ctx.agent.address,
+            timestamp=int(time.time()),
+            response_from_agent={"error": str(e)},
+        )
+
 
 
 @verification_agent.on_event("startup")
@@ -80,7 +109,10 @@ async def startup(ctx: Context):
     print(f"Verification Agent starting up...")
     print(f"Agent address: {verification_agent.address}")
     await asyncio.sleep(2)
-   # await start_verification_workflow(ctx)
+
+
+# await start_verification_workflow(ctx)
+
 
 def identify_sponsor_apis_from_requirements(requirements: str) -> list:
     """
@@ -124,14 +156,14 @@ def identify_sponsor_apis_from_requirements(requirements: str) -> list:
     try:
         url = "https://api.asi1.ai/v1/chat/completions"
         headers = {
-                "Content-Type": "application/json",
-                "Authorization": f"Bearer {ASI_ONE_API_KEY}",
-            }
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {ASI_ONE_API_KEY}",
+        }
 
         messages = [
             {"role": "system", "content": prompt},
             {"role": "user", "content": requirements},
-            ]
+        ]
 
         data = {"model": "asi1-mini", "messages": messages}
 
@@ -140,17 +172,18 @@ def identify_sponsor_apis_from_requirements(requirements: str) -> list:
             raise Exception(f"ASI.AI API error: {response.status_code}")
 
         result = response.json()
-        print('\nAPI Response:', json.dumps(result, indent=2))
-        if not result.get('choices') or not result['choices'][0].get('message'):
-            raise Exception('Invalid API response format')
-            
-        content = result['choices'][0]['message']['content']
-        print('\nLLM Output:', content)
+        print("\nAPI Response:", json.dumps(result, indent=2))
+        if not result.get("choices") or not result["choices"][0].get("message"):
+            raise Exception("Invalid API response format")
+
+        content = result["choices"][0]["message"]["content"]
+        print("\nLLM Output:", content)
         list = json.loads(content[7:-3])
-        return list['apis_sdk_classes_and_libraries']
+        return list["apis_sdk_classes_and_libraries"]
 
     except Exception as e:
-        print("Error:" , e)
+        print("Error:", e)
+
 
 if __name__ == "__main__":
     verification_agent.run()
